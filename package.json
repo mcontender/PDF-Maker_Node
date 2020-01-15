@@ -1,0 +1,28 @@
+{
+    "name": "pdf-maker_node",
+    "version": "1.0.0",
+    "description": "PDF-Maker_Node",
+    "main": "app.js",
+    "dependencies": {
+        "express": "^4.17.1",
+        "morgan": "^1.9.1",
+        "puppeteer": "^2.0.0"
+    },
+    "devDependencies": {
+        "eslint": "^6.8.0"
+    },
+    "scripts": {
+        "lint": "eslint source/js",
+        "test": "node app.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/mcontender/PDF-Maker_Node.git"
+    },
+    "author": "Mikey Valeron",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/mcontender/PDF-Maker_Node/issues"
+    },
+    "homepage": "https://github.com/mcontender/PDF-Maker_Node#readme"
+}

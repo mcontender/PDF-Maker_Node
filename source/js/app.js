@@ -1,14 +1,14 @@
 var express = require('express');
 var logger = require('morgan');
-var square = require('./modules/square'); // Here we require() the name of the file without the (optional) .js file extension
-var wiki = require('./modules/wiki.js');
+var square = require('../../modules/square'); // Here we require() the name of the file without the (optional) .js file extension
+var wiki = require('../../modules/wiki.js');
 var app = express();
 
 // An example middleware function
 var a_middleware_function = function(req, res, next) {
     // ... perform some operations
     next(); // Call next() so Express will call the next middleware function in the chain.
-}
+};
 
 /* --------------------
 Set Section

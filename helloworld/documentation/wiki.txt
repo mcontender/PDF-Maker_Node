@@ -1,0 +1,4 @@
+Start Server
+---------------
+Go to root of folder
+DEBUG=helloworld:* npm run devstart
