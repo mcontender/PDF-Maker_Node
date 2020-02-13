@@ -1,7 +1,9 @@
 Start Server
 ---------------
 1. Go to root of the helloworld folder
-2. Run this command in the terminal
+2. Run these commands in the terminal
+> /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+> brew install node
 > npm install
 3. When ready to use the tool, run this command in the terminal
 > DEBUG=helloworld:* npm run devstart
