@@ -20,6 +20,7 @@ async function SShot(res, next, url) {
             fs.mkdirSync(dir, { recursive: true });
         }
 
+        // TODO: open and setup monthly cookie
         await page.setViewport({ width: 1920, height: 1080 });
         await page.goto(url, { waitUntil: 'networkidle2' }); // make sure all JS is loaded and all Ajax requests are done.
         await page.emulateMedia('screen'); // or screen
@@ -120,18 +121,19 @@ async function SShot(res, next, url) {
 
                     var fileName = dir + '/section_' + (i + 1) + '.png';
                     await page.screenshot({ path: fileName });
-                    // TODO: After first SS is taken then look for disclaimer in view
-
-                    // TODO: After disclaimer SS is taken then look for Arrow/tabs
-                    // TODO: After arrow/tabs is taken then look one last time for disclaimers
-                    // TODO: After final disclaimer then look for modal buttons
-                    // TODO: After modal opens then look for disclaimers in modal
+                    // TODO: After first SS is taken then look for disclaimer in view - 24 hours
+                    // TODO: After disclaimer SS is taken then look for Arrow/tabs - 24 hours
+                    // TODO: After arrow/tabs is taken then look one last time for disclaimers - 24 hours
+                    // TODO: After final disclaimer then look for modal buttons - 40 hours
+                    // TODO: After modal opens then look for disclaimers in modal - 24 hours
                 }
             }
             console.log('Section Done');
             // const element = await page.$('.tile-container');
             // await element.screenshot({ path: './public/screenshots/section.png' });
         }
+        // TODO: Convert images to PDF - 24 hours
+        // TODO: Give PDF to User and delete images from server - 24 hours
         // ----------------------
 
         // ----------------------
@@ -170,6 +172,8 @@ async function SShot(res, next, url) {
 
     } catch (err) {
         console.log(err);
+        await page.close();
+        await browser.close();
     }
 }
 

@@ -1,4 +1,9 @@
 Start Server
 ---------------
-Go to root of folder
-DEBUG=helloworld:* npm run devstart
+1. Go to root of the helloworld folder
+2. Run this command in the terminal
+> npm install
+3. When ready to use the tool, run this command in the terminal
+> DEBUG=helloworld:* npm run devstart
+4. Open the below URL in your browser and you are done
+> http://localhost:3000/
