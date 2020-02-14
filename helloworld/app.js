@@ -21,6 +21,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Setup pages that are accessible on the server and map them to their respective routes
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/wiki', wikiRouter);

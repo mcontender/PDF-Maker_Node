@@ -3,12 +3,8 @@ var router = express.Router();
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
+    // Render html when home page is hit
     res.render('index', { title: 'Express' });
 });
-
-// router.get('/snap', function(req, res, next) {
-//     console.log('[LOG] Submitted URL: ' + req.query.url);
-//     res.send(req.query.url);
-// });
 
 module.exports = router;
