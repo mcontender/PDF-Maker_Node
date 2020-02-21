@@ -6,3 +6,7 @@ body {
 a {
   color: #00B7FF;
 }
+label {padding: 10px 0;}
+.url{width: 250px;}
+label, input { display: block;}
+button {margin: 10px 0;}

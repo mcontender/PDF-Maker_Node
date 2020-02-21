@@ -4,6 +4,10 @@ block content
   h1= title
   p Welcome to #{title}
   label(for='url') URL:
-  input#url.form-control(type='text', placeholder='http://www.google.com' name='url')
+  input#url.form-control(type='text', placeholder='http://www.google.com' name='url' class='url')
+  label(for='brandPsw') Brand Password:
+  input#brandPsw.form-control(type='text', placeholder='' name='brandPsw')
   button#button Open Browser
   p#response
+
+  

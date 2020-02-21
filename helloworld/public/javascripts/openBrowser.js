@@ -4,7 +4,9 @@ $(document).ready(function() {
         // respect the cross-domain policy by using the same domain
         // you used to access your index.html file!
         var url = $('#url').val();
-        var path = 'http://localhost:3000/snap?url=' + url;
+        var psw = $('#brandPsw').val();
+        var path = 'http://localhost:3000/snap?url=' + url + '&psw=' + psw;
+        
         //TODO: Add validation and error for URL field
         //TODO: Add support for password page
         $.get(path, function(response) {
