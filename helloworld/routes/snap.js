@@ -1,6 +1,7 @@
 var express = require('express');
 const puppeteer = require('puppeteer');
 const fs = require('fs')
+const imagesToPdf = require("images-to-pdf")
 var router = express.Router();
 var chrsz = 8; /* bits per input character. 8 - ASCII; 16 - Unicode      */
 var hexcase = 0; /* hex output format. 0 - lowercase; 1 - uppercase        */
@@ -24,12 +25,12 @@ function isInViewport(ele, windowScrollY, windowHeight) {
 };
 
 async function SShot(res, next, url, psw) {
-    let browser = await puppeteer.launch({ headless: false, devtools: true });
+    let browser = await puppeteer.launch({ headless: false, devtools: false });
     let page = await browser.newPage();
+    let screenshotArray = new Array();
 
     // ----------------------
     // set up cookie + encrypt + set up expiration
-
     var cookieValue = await b64_md5(psw);
     var cookieName = 'ac';
     var today = new Date();
@@ -38,20 +39,20 @@ async function SShot(res, next, url, psw) {
 
     // ----------------------
     //get brand from URL passed
-
+    // ----------------------
     var brandUrl = await getPath(url);
-
     console.log("LOG : brand URL " + brandUrl);
 
     // ----------------------
     //set expiration on cookie
+    // ----------------------
     expire.setTime(today.getTime() + 3600000 * 24 * nDays);
     if (nDays == null || nDays == 0) { nDays = 45; }
 
-    var cookiesVal = escape(cookieValue);
-
     // ----------------------
     //set up cookie with objectr
+    // ----------------------
+    var cookiesVal = escape(cookieValue);
     const cookies = [{
         'name': 'ac',
         'value': cookiesVal,
@@ -60,17 +61,20 @@ async function SShot(res, next, url, psw) {
 
     // ----------------------
     //set cookies on page
+    // ----------------------
     const cookiesSet = await page.cookies(brandUrl);
     await page.setCookie(...cookies);
     console.log(JSON.stringify(cookiesSet));
 
-
+    // ----------------------
+    // Debugging messages setup
+    // ----------------------
     page.on('dialog', async dialog => {
         console.log(dialog.message())
         await dialog.dismiss()
     });
     page.on('console', msg => console.log('PAGE LOG:', msg.text()));
-    // let fullPage = false;
+
     console.log('Page URL: ' + url);
     try {
         // ----------------------
@@ -181,6 +185,7 @@ async function SShot(res, next, url, psw) {
         var heroPath = dir + '/section_0.png';
         console.log(heroPath);
         await element.screenshot({ path: heroPath });
+        screenshotArray.push(heroPath);
 
         // ----------------------
         // Loop through each module that we found in the parsys container and scroll them into view to make sure they are in the screenshot correctly
@@ -231,6 +236,7 @@ async function SShot(res, next, url, psw) {
                 // ----------------------
                 var fileName = dir + '/section_' + (i + 1) + '-0.png';
                 await page.screenshot({ path: fileName });
+                screenshotArray.push(fileName);
                 console.log('screenshot taken:');
                 await wait(1000);
 
@@ -276,6 +282,7 @@ async function SShot(res, next, url, psw) {
                     // ----------------------
                     var fileName = dir + '/section_' + (i + 1) + '-' + (x + 1) + '.png';
                     await page.screenshot({ path: fileName });
+                    screenshotArray.push(fileName);
                     await wait(1000);
                     // ----------------------
                     // Close Disclaimer box if it was open
@@ -329,6 +336,8 @@ async function SShot(res, next, url, psw) {
         // lets make sure we close the page/tab and then the browser we created.
         await page.close();
         await browser.close();
+        console.log(screenshotArray);
+        await imagesToPdf(screenshotArray, dir + "/combined.pdf");
         // ----------------------
         // Send a response to the original request that we are done taking screenshots
         res.send('Screenshot taken for: ' + url); //req.query.url);
