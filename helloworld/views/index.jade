@@ -3,11 +3,15 @@ extends layout
 block content
   h1= title
   p Welcome to #{title}
-  label(for='url') URL:
-  input#url.form-control(type='text', placeholder='http://www.google.com' name='url' class='url')
-  label(for='brandPsw') Brand Password:
-  input#brandPsw.form-control(type='text', placeholder='' name='brandPsw')
-  button#button Open Browser
+  form(action="")
+    div(class= "form-group")
+      label(for='url') URL:
+      input#url.form-control(type='text', placeholder='http://www.google.com' name='url')
+
+    div(class= "form-group brand disabled" )
+      label(for='brandPsw') Brand Password:
+      input#brandPsw.form-control(type='password', placeholder='' name='brandPsw' disabled)
+    button#button Open Browser
   p#response
 
   
