@@ -1,27 +1,30 @@
 $(document).ready(function() {
-    $('#button').click(function() {
+    $('#button').click(function(event) {
+        event.preventDefault();
         // run an AJAX get request to the route you setup above...
         // respect the cross-domain policy by using the same domain
         // you used to access your index.html file!
         try {
             console.log('test click');
             var url = $('#url').val();
+            console.log('URL: ' + encodeURI(url));
             var psw = $('#brandPsw').val();
-            var path = 'http://localhost:3000/snap?url=' + url + '&psw=' + psw;
-
+            console.log('Password: ' + psw);
+            var path = 'http://localhost:3000/snap?url=' + encodeURI(url) + '&psw=' + psw;
+            // var path = 'http://localhost:3000/snap?url=' + url;
             //TODO: Add validation and error for URL field
             //TODO: Add support for password page\
-            console.log(path);
+            console.log('Path: ' + path);
             $.get(path, function(response) {
                 console.log(response);
                 $('#response').html(response); // show the list
-            });
+            }, "html");
         } catch (err) {
             console.log(err);
         }
     });
 
-    $("#url").on("input", function() {
+    $("#url").on("input", function(event) {
         // Print entered value in a div box
         var value = $(this).val();
         console.log(value);

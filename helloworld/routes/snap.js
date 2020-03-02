@@ -45,35 +45,36 @@ async function SShot(res, next, url, psw) {
     var nDays = 45;
 
 
+    if (url.indexOf('psw') > 0) {
+        if (url.indexOf('preview') >= 0 || url.indexOf('test') >= 0 || url.indexOf('uat') >= 0) {
+            console.log("LOG: Preview Cookie Set Up!!!");
+            // ----------------------
+            //set expiration on cookie
+            // ----------------------
+            expire.setTime(today.getTime() + 3600000 * 24 * nDays);
+            if (nDays == null || nDays == 0) { nDays = 45; }
 
-    if (url.indexOf('preview') >= 0 || url.indexOf('test') >= 0 || url.indexOf('uat') >= 0) {
-        console.log("LOG: Preview Cookie Set Up!!!");
-        // ----------------------
-        //set expiration on cookie
-        // ----------------------
-        expire.setTime(today.getTime() + 3600000 * 24 * nDays);
-        if (nDays == null || nDays == 0) { nDays = 45; }
+            // ----------------------
+            //set up cookie with objectr
+            // ----------------------
+            var cookiesVal = escape(cookieValue);
+            const cookies = [{
+                'name': 'ac',
+                'value': cookiesVal,
+                'domain': brandUrl
+            }];
 
-        // ----------------------
-        //set up cookie with objectr
-        // ----------------------
-        var cookiesVal = escape(cookieValue);
-        const cookies = [{
-            'name': 'ac',
-            'value': cookiesVal,
-            'domain': brandUrl
-        }];
-
-        // ----------------------
-        //set cookies on page
-        // ----------------------
-        const cookiesSet = await page.cookies(brandUrl);
-        await page.setCookie(...cookies);
-        console.log(JSON.stringify(cookiesSet));
+            // ----------------------
+            //set cookies on page
+            // ----------------------
+            const cookiesSet = await page.cookies(brandUrl);
+            await page.setCookie(...cookies);
+            console.log(JSON.stringify(cookiesSet));
 
 
-    } else {
-        console.log("LOG: No Cookie Required!!!");
+        } else {
+            console.log("LOG: No Cookie Required!!!");
+        }
     }
 
 
@@ -275,7 +276,7 @@ async function SShot(res, next, url, psw) {
                 // ----------------------
                 // Check for disclaimer child elements in module we just SS
                 // ----------------------
-                await disclaimerCheck(i, eleLookup);
+                await disclaimerCheck(i, eleLookup, page, dir, screenshotArray);
                 // ----------------------
 
                 // TODO: After disclaimer SS is taken then look for Arrow/tabs - 24 hours
@@ -553,7 +554,7 @@ function getPath(url) {
     return temp;
 }
 
-async function disclaimerCheck(i, eleLookup) {
+async function disclaimerCheck(i, eleLookup, page, dir, screenshotArray) {
     // ----------------------
     // Check for disclaimer child elements in module we just SS
     // ----------------------
