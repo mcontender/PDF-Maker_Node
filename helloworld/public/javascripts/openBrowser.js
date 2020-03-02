@@ -3,15 +3,22 @@ $(document).ready(function() {
         // run an AJAX get request to the route you setup above...
         // respect the cross-domain policy by using the same domain
         // you used to access your index.html file!
-        var url = $('#url').val();
-        var psw = $('#brandPsw').val();
-        var path = 'http://localhost:3000/snap?url=' + url + '&psw=' + psw;
+        try {
+            console.log('test click');
+            var url = $('#url').val();
+            var psw = $('#brandPsw').val();
+            var path = 'http://localhost:3000/snap?url=' + url + '&psw=' + psw;
 
-        //TODO: Add validation and error for URL field
-        //TODO: Add support for password page
-        $.get(path, function(response) {
-            $('#response').html(response); // show the list
-        });
+            //TODO: Add validation and error for URL field
+            //TODO: Add support for password page\
+            console.log(path);
+            $.get(path, function(response) {
+                console.log(response);
+                $('#response').html(response); // show the list
+            });
+        } catch (err) {
+            console.log(err);
+        }
     });
 
     $("#url").on("input", function() {

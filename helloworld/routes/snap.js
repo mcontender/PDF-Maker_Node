@@ -102,7 +102,6 @@ async function SShot(res, next, url, psw) {
             fs.mkdirSync(dir, { recursive: true });
         }
 
-        // TODO: open and setup monthly cookie
         // ----------------------
         // Set page settings and create a new tab
         // ----------------------
@@ -272,28 +271,38 @@ async function SShot(res, next, url, psw) {
                 console.log('screenshot taken:');
                 await wait(1000);
 
+                // TODO: TURN INTO ONE FUNCTION
                 // ----------------------
                 // Check for disclaimer child elements in module we just SS
                 // ----------------------
-                const disclaimerListLength = await page.evaluate((eleLookup) => {
+                await disclaimerCheck(i, eleLookup);
+                // ----------------------
+
+                // TODO: After disclaimer SS is taken then look for Arrow/tabs - 24 hours
+                // ----------------------
+                // Check for arrow child elements in module we just SS
+                // ----------------------
+                const arrowListLength = await page.evaluate((eleLookup) => {
                     var list = new Array();
-                    list = $(eleLookup).find('.disclosure-bubble-wrapper .bubble');
+                    // .arrow works for hero carousel
+                    list = $(eleLookup).find('.arrow');
                     return list.length;
+                    // TODO: check for how many pagination
                 }, eleLookup);
 
                 // ----------------------
-                // Click Disclaimer
+                // Click arrow
                 // Check if in view and then click to open it
                 // ----------------------
                 console.log('eleLookup: ' + eleLookup);
-                console.log("disclaimerList: " + disclaimerListLength);
-                for (let x = 0; x < disclaimerListLength; x++) {
-                    const disclaimerOpen = await page.evaluate(({ eleLookup, x }) => {
+                console.log("arrowList: " + arrowListLength);
+                for (let x = 0; x < arrowListLength; x++) {
+                    const arrowOpen = await page.evaluate(({ eleLookup, x }) => {
                         // ----------------------
-                        // Check if disclaimer is in viewport
+                        // Check if arrow is in viewport
                         // ----------------------
                         console.log(eleLookup);
-                        var ele = $(eleLookup).find('.disclosure-bubble-wrapper .bubble')[x];
+                        var ele = $(eleLookup).find('.arrow')[x];
                         var elementBounding = ele.getBoundingClientRect();
                         var elementTop = elementBounding.top + window.scrollY;
                         var elementBottom = elementTop + elementBounding.height;
@@ -301,7 +310,7 @@ async function SShot(res, next, url, psw) {
                         var viewportBottom = viewportTop + window.outerHeight;
 
                         // ----------------------
-                        // Click disclaimer if in view
+                        // Click arrow if in view
                         // ----------------------
                         if (elementBottom > viewportTop && elementTop < viewportBottom) {
                             ele.click();
@@ -312,22 +321,16 @@ async function SShot(res, next, url, psw) {
                     // ----------------------
                     // Take the module screenshot and save it under sections
                     // ----------------------
-                    var fileName = dir + '/section_' + (i + 1) + '-' + (x + 1) + '.png';
+                    var fileName = dir + '/section_' + (i + 1) + '-arrow-' + (x + 1) + '.png';
                     await page.screenshot({ path: fileName });
                     screenshotArray.push(fileName);
                     await wait(1000);
                     // ----------------------
-                    // Close Disclaimer box if it was open
+                    // Close Arrow box if it was open
                     // ----------------------
-                    const disclaimerClose = await page.evaluate(() => {
-                        $('#disclosure-panel-wrapper').find('.ucx-close-button').click();
-                        console.log('**close disclaimer - inside loop**');
-                    });
-                    console.log('**Next Disclaimer**');
+                    //TODO: Check for disclaimers
+                    console.log('**Next Pagination**');
                 }
-                // ----------------------
-
-                // TODO: After disclaimer SS is taken then look for Arrow/tabs - 24 hours
                 // TODO: After arrow/tabs is taken then look one last time for disclaimers - 24 hours
                 // TODO: After final disclaimer then look for modal buttons - 40 hours
                 // TODO: After modal opens then look for disclaimers in modal - 24 hours
@@ -548,6 +551,62 @@ function getPath(url) {
 
     var temp = "." + url.match(/[^(?:http:\/\/|www\.|https:\/\/|www\-preview)\.|uat\.|preview\.|test\.)]([^\/]+)(com)/g);
     return temp;
+}
+
+async function disclaimerCheck(i, eleLookup) {
+    // ----------------------
+    // Check for disclaimer child elements in module we just SS
+    // ----------------------
+    const disclaimerListLength = await page.evaluate((eleLookup) => {
+        var list = new Array();
+        list = $(eleLookup).find('.disclosure-bubble-wrapper .bubble');
+        return list.length;
+    }, eleLookup);
+
+    // ----------------------
+    // Click Disclaimer
+    // Check if in view and then click to open it
+    // ----------------------
+    console.log('eleLookup: ' + eleLookup);
+    console.log("disclaimerList: " + disclaimerListLength);
+    for (let x = 0; x < disclaimerListLength; x++) {
+        const disclaimerOpen = await page.evaluate(({ eleLookup, x }) => {
+            // ----------------------
+            // Check if disclaimer is in viewport
+            // ----------------------
+            console.log(eleLookup);
+            var ele = $(eleLookup).find('.disclosure-bubble-wrapper .bubble')[x];
+            var elementBounding = ele.getBoundingClientRect();
+            var elementTop = elementBounding.top + window.scrollY;
+            var elementBottom = elementTop + elementBounding.height;
+            var viewportTop = window.scrollY;
+            var viewportBottom = viewportTop + window.outerHeight;
+
+            // ----------------------
+            // Click disclaimer if in view
+            // ----------------------
+            if (elementBottom > viewportTop && elementTop < viewportBottom) {
+                ele.click();
+                return true;
+            }
+        }, { eleLookup, x });
+        await wait(1000);
+        // ----------------------
+        // Take the module screenshot and save it under sections
+        // ----------------------
+        var fileName = dir + '/section_' + (i + 1) + '-' + (x + 1) + '.png';
+        await page.screenshot({ path: fileName });
+        screenshotArray.push(fileName);
+        await wait(1000);
+        // ----------------------
+        // Close Disclaimer box if it was open
+        // ----------------------
+        const disclaimerClose = await page.evaluate(() => {
+            $('#disclosure-panel-wrapper').find('.ucx-close-button').click();
+            console.log('**close disclaimer - inside loop**');
+        });
+        console.log('**Next Disclaimer**');
+    }
 }
 
 
