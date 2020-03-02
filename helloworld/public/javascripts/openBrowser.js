@@ -6,7 +6,7 @@ $(document).ready(function() {
         var url = $('#url').val();
         var psw = $('#brandPsw').val();
         var path = 'http://localhost:3000/snap?url=' + url + '&psw=' + psw;
-        
+
         //TODO: Add validation and error for URL field
         //TODO: Add support for password page
         $.get(path, function(response) {
@@ -14,7 +14,7 @@ $(document).ready(function() {
         });
     });
 
-    $("#url").on("input", function(){
+    $("#url").on("input", function() {
         // Print entered value in a div box
         var value = $(this).val();
         console.log(value);
@@ -24,11 +24,11 @@ $(document).ready(function() {
         } else {
             $('#brandPsw').attr('disabled', 'true');
             $('.brand').addClass('disabled');
-       }
+        }
         //$("#result").text($(this).val());
     })
-    
-    
-   
+
+
+
 
 });

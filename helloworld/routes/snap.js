@@ -30,6 +30,13 @@ async function SShot(res, next, url, psw) {
     let screenshotArray = new Array();
 
     // ----------------------
+    //get brand from URL passed
+    // ----------------------
+    var brandUrl = await getPath(url);
+    console.log("LOG : brand URL " + brandUrl);
+
+
+    // ----------------------
     // set up cookie + encrypt + set up expiration
     var cookieValue = await b64_md5(psw);
     var cookieName = 'ac';
@@ -37,34 +44,38 @@ async function SShot(res, next, url, psw) {
     var expire = new Date();
     var nDays = 45;
 
-    // ----------------------
-    //get brand from URL passed
-    // ----------------------
-    var brandUrl = await getPath(url);
-    console.log("LOG : brand URL " + brandUrl);
 
-    // ----------------------
-    //set expiration on cookie
-    // ----------------------
-    expire.setTime(today.getTime() + 3600000 * 24 * nDays);
-    if (nDays == null || nDays == 0) { nDays = 45; }
 
-    // ----------------------
-    //set up cookie with objectr
-    // ----------------------
-    var cookiesVal = escape(cookieValue);
-    const cookies = [{
-        'name': 'ac',
-        'value': cookiesVal,
-        'domain': brandUrl
-    }];
+    if (url.indexOf('preview') >= 0 || url.indexOf('test') >= 0 || url.indexOf('uat') >= 0) {
+        console.log("LOG: Preview Cookie Set Up!!!");
+        // ----------------------
+        //set expiration on cookie
+        // ----------------------
+        expire.setTime(today.getTime() + 3600000 * 24 * nDays);
+        if (nDays == null || nDays == 0) { nDays = 45; }
 
-    // ----------------------
-    //set cookies on page
-    // ----------------------
-    const cookiesSet = await page.cookies(brandUrl);
-    await page.setCookie(...cookies);
-    console.log(JSON.stringify(cookiesSet));
+        // ----------------------
+        //set up cookie with objectr
+        // ----------------------
+        var cookiesVal = escape(cookieValue);
+        const cookies = [{
+            'name': 'ac',
+            'value': cookiesVal,
+            'domain': brandUrl
+        }];
+
+        // ----------------------
+        //set cookies on page
+        // ----------------------
+        const cookiesSet = await page.cookies(brandUrl);
+        await page.setCookie(...cookies);
+        console.log(JSON.stringify(cookiesSet));
+
+
+    } else {
+        console.log("LOG: No Cookie Required!!!");
+    }
+
 
     // ----------------------
     // Debugging messages setup
@@ -73,8 +84,12 @@ async function SShot(res, next, url, psw) {
         console.log(dialog.message())
         await dialog.dismiss()
     });
+
+
     page.on('console', msg => console.log('PAGE LOG:', msg.text()));
 
+
+    // // console.log('PAGE LOG MSG :', msg);
     console.log('Page URL: ' + url);
     try {
         // ----------------------
@@ -94,7 +109,24 @@ async function SShot(res, next, url, psw) {
         await page.setViewport({ width: 1920, height: 1080 });
         // make sure all JS is loaded and all Ajax requests are done.
         let cookiesSet = await page.cookies(url);
-        await page.goto(url, { waitUntil: 'networkidle0' });
+        let result;
+
+        // await page.goto(url, { waitUntil: 'networkidle0' });
+
+        try {
+            result = await page.goto(url, { waitUntil: 'networkidle0' });
+            console.info('No error thrown')
+
+            if (result.status() === 403) {
+                console.error('403 status code found in result')
+            }
+        } catch (err) {
+            console.error('Error thrown')
+        }
+
+
+
+
         await page.emulateMedia('screen');
 
 

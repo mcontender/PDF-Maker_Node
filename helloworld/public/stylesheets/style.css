@@ -1,25 +1,40 @@
 body {
-  padding: 50px;
-  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+    padding: 50px;
+    font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
 }
 
 a {
-  color: #00B7FF;
+    color: #00B7FF;
 }
-label {padding: 10px 0;}
-#url{width: 250px;}
-label, input { display: block;}
-button {margin: 10px 0;}
 
-.brand{
-  -webkit-transition: all 1.3s ease-in;
-  -moz-transition: all 1.3s ease-in;
-  -o-transition: all 1.3s ease-in;
-  opacity: 1;
-  max-height: 400px;
-  
+label {
+    padding: 10px 0;
 }
+
+#url {
+    width: 250px;
+}
+
+label,
+input {
+    display: block;
+}
+
+button {
+    margin: 10px 0;
+}
+
+.brand {
+    -webkit-transition: all 1.3s ease-in;
+    -moz-transition: all 1.3s ease-in;
+    -o-transition: all 1.3s ease-in;
+    opacity: 1;
+    max-height: 400px;
+}
+
 .brand.disabled {
-  opacity: 0;
-  max-height: 0;
+    opacity: 0;
+    max-height: 0;
+    position: absolute;
+    z-index: 1;
 }
