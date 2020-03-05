@@ -25,7 +25,7 @@ function isInViewport(ele, windowScrollY, windowHeight) {
 };
 
 async function SShot(res, next, url, psw) {
-    let browser = await puppeteer.launch({ headless: false, devtools: false });
+    let browser = await puppeteer.launch({ headless: false, devtools: true });
     let page = await browser.newPage();
     let screenshotArray = new Array();
 
@@ -33,7 +33,7 @@ async function SShot(res, next, url, psw) {
     //get brand from URL passed
     // ----------------------
     var brandUrl = await getPath(url);
-    console.log("LOG : brand URL " + brandUrl);
+    // console.log("LOG : brand URL " + brandUrl);
 
 
     // ----------------------
@@ -86,11 +86,9 @@ async function SShot(res, next, url, psw) {
         await dialog.dismiss()
     });
 
+    // page.on('console', msg => console.log('PAGE LOG:', msg.text()));
 
-    page.on('console', msg => console.log('PAGE LOG:', msg.text()));
-
-
-    // // console.log('PAGE LOG MSG :', msg);
+    // console.log('PAGE LOG MSG :', msg);
     console.log('Page URL: ' + url);
     try {
         // ----------------------
@@ -98,7 +96,7 @@ async function SShot(res, next, url, psw) {
         // ----------------------
         var date = new Date();
         var dir = './public/screenshots/' + date.getFullYear() + '/' + (date.getMonth() + 1) + '/' + date.getDate();
-        console.log('Directory: ' + dir);
+        // console.log('Directory: ' + dir);
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true });
         }
@@ -154,7 +152,7 @@ async function SShot(res, next, url, psw) {
 
         // ----------------------
         // Loop enoght times where there is no more height and we know we have gotten to the bottom of the page
-        // This loops based on the viewport height 
+        // This loops based on the viewport height
         while (viewportIncr + viewportHeight < height) {
             screenNum++;
             await page.evaluate(_viewportHeight => {
@@ -211,13 +209,15 @@ async function SShot(res, next, url, psw) {
         // const source = await page.content();
         // console.log(stories);
 
-        var element = await page.$('.hero');
+        // var element = await page.$('.hero');
         // ----------------------
         // Take Hero screenshot since its not part of the parsys container
-        var heroPath = dir + '/section_0.png';
-        console.log(heroPath);
-        await element.screenshot({ path: heroPath });
-        screenshotArray.push(heroPath);
+        // var heroPath = dir + '/section_0-hero.png';
+        // console.log(heroPath);
+        // await element.screenshot({ path: heroPath });
+        // screenshotArray.push(heroPath);
+        page.$eval('.hero', (el) => el.scrollIntoView())
+        await arrowCheck(-1, '.hero', page, dir, screenshotArray);
 
         // ----------------------
         // Loop through each module that we found in the parsys container and scroll them into view to make sure they are in the screenshot correctly
@@ -237,31 +237,31 @@ async function SShot(res, next, url, psw) {
                     // console.log('Sections: ChildID Used');
                     page.$eval('#' + sections[i].childID, (el) => el.scrollIntoView())
                     eleLookup = '#' + sections[i].childID;
-                    await wait(1000);
+                    await wait(500);
                 } else if (sections[i].id != '') {
                     // console.log('Sections: ID Used');
                     page.$eval('#' + sections[i].id, (el) => el.scrollIntoView())
                     eleLookup = '#' + sections[i].id;
-                    await wait(1000);
+                    await wait(500);
                 } else {
                     // console.log('Sections: Class Used');
                     page.$eval('.' + sections[i].class.toString().split(' ')[0], (el) => el.scrollIntoView())
                     eleLookup = '.' + sections[i].class.toString().split(' ')[0];
-                    await wait(1000);
+                    await wait(500);
                 }
 
                 // ----------------------
                 // Always close the last one from the loop
                 // ----------------------
-                console.log('**Always Try To Close Disclaimer First**');
+                // console.log('**Always Try To Close Disclaimer First**');
                 const disclaimerClose = await page.evaluate(() => {
                     $('#disclosure-panel-wrapper').find('.ucx-close-button').click();
                     $('#disclosure-panel-wrapper .disclosure-panel-wrapper').removeClass('show');
-                    console.log('Close Button: ' + $('#disclosure-panel-wrapper').find('.ucx-close-button').length);
-                    console.log('**close disclaimer - outside loop**');
+                    // console.log('Close Button: ' + $('#disclosure-panel-wrapper').find('.ucx-close-button').length);
+                    // console.log('**close disclaimer - outside loop**');
                     // debugger;
                 });
-                await wait(1000);
+                await wait(500);
 
                 // ----------------------
                 // Take the module screenshot and save it under sections
@@ -269,104 +269,28 @@ async function SShot(res, next, url, psw) {
                 var fileName = dir + '/section_' + (i + 1) + '-0.png';
                 await page.screenshot({ path: fileName });
                 screenshotArray.push(fileName);
-                console.log('screenshot taken:');
-                await wait(1000);
+                // console.log('screenshot taken:');
+                await wait(500);
 
                 // TODO: TURN INTO ONE FUNCTION
                 // ----------------------
                 // Check for disclaimer child elements in module we just SS
                 // ----------------------
-                await disclaimerCheck(i, eleLookup, page, dir, screenshotArray);
-                // ----------------------
+                await disclaimerCheck(i, eleLookup, page, dir, screenshotArray, 0);
 
                 // TODO: After disclaimer SS is taken then look for Arrow/tabs - 24 hours
                 // ----------------------
                 // Check for arrow child elements in module we just SS
                 // ----------------------
-                const arrowListLength = await page.evaluate((eleLookup) => {
-                    var list = new Array();
-                    // .arrow works for hero carousel
-                    list = $(eleLookup).find('.arrow');
-                    return list.length;
-                    // TODO: check for how many pagination
-                }, eleLookup);
+                await arrowCheck(i, eleLookup, page, dir, screenshotArray);
 
-                // ----------------------
-                // Click arrow
-                // Check if in view and then click to open it
-                // ----------------------
-                console.log('eleLookup: ' + eleLookup);
-                console.log("arrowList: " + arrowListLength);
-                for (let x = 0; x < arrowListLength; x++) {
-                    const arrowOpen = await page.evaluate(({ eleLookup, x }) => {
-                        // ----------------------
-                        // Check if arrow is in viewport
-                        // ----------------------
-                        console.log(eleLookup);
-                        var ele = $(eleLookup).find('.arrow')[x];
-                        var elementBounding = ele.getBoundingClientRect();
-                        var elementTop = elementBounding.top + window.scrollY;
-                        var elementBottom = elementTop + elementBounding.height;
-                        var viewportTop = window.scrollY;
-                        var viewportBottom = viewportTop + window.outerHeight;
-
-                        // ----------------------
-                        // Click arrow if in view
-                        // ----------------------
-                        if (elementBottom > viewportTop && elementTop < viewportBottom) {
-                            ele.click();
-                            return true;
-                        }
-                    }, { eleLookup, x });
-                    await wait(1000);
-                    // ----------------------
-                    // Take the module screenshot and save it under sections
-                    // ----------------------
-                    var fileName = dir + '/section_' + (i + 1) + '-arrow-' + (x + 1) + '.png';
-                    await page.screenshot({ path: fileName });
-                    screenshotArray.push(fileName);
-                    await wait(1000);
-                    // ----------------------
-                    // Close Arrow box if it was open
-                    // ----------------------
-                    //TODO: Check for disclaimers
-                    console.log('**Next Pagination**');
-                }
                 // TODO: After arrow/tabs is taken then look one last time for disclaimers - 24 hours
                 // TODO: After final disclaimer then look for modal buttons - 40 hours
                 // TODO: After modal opens then look for disclaimers in modal - 24 hours
             }
         }
-        console.log('Section Done');
-        // TODO: Convert images to PDF - 24 hours
+        // console.log('Section Done');
         // TODO: Give PDF to User and delete images from server - 24 hours
-
-        // ----------------------
-        // LAZY LOAD - Deprecated, it doesn't do what we need correctly
-        // if (fullPage) {
-        //     const bodyHandle = await page.$('.globalWrapper');
-        //     const { height } = await bodyHandle.boundingBox();
-        //     await bodyHandle.dispose();
-        //     await page.screenshot({ path: './public/screenshots/test.jpg', type: 'jpeg', fullPage: false });
-        //     // Scroll one viewport at a time, pausing to let content load
-        //     // const viewportHeight = page.viewport().height;
-        //     let viewportIncr = 0;
-        //     let screenNum = 0;
-        //     await page.screenshot({ path: './public/screenshots/scrolling/screen_' + screenNum + '.png' });
-        //     await wait(2000);
-        //     const viewportHeight = page.viewport().height;
-        //     console.log(viewportHeight);
-        //     while (viewportIncr + viewportHeight < height) {
-        //         screenNum++;
-        //         await page.evaluate(_viewportHeight => {
-        //             window.scrollBy(0, _viewportHeight);
-        //         }, viewportHeight);
-        //         await wait(2000);
-        //         viewportIncr = viewportIncr + viewportHeight;
-        //         await page.screenshot({ path: './public/screenshots/screen_' + screenNum + '.png' });
-        //     }
-        // }
-        // ----------------------
 
         // ----------------------
         // lets make sure we close the page/tab and then the browser we created.
@@ -387,7 +311,245 @@ async function SShot(res, next, url, psw) {
     }
 }
 
+async function disclaimerCheck(i, eleLookup, page, dir, screenshotArray, y, childElement) {
+    // ----------------------
+    // Check for disclaimer child elements in module we just SS
+    // ----------------------
+    var disclaimerListLength;
+    // console.log(childElement);
+    // console.log(childElement == undefined);
+    // ----------------------
+    // Check if we have a childElement (Hero Panels)
+    if (childElement != undefined) {
+        if (childElement.length > 0) {
+            disclaimerListLength = await page.evaluate(({ eleLookup, y, childElement }) => {
+                var list = new Array();
+                list = $(eleLookup).find(childElement).eq(y).find('.disclosure-bubble-wrapper .bubble');
+                // debugger;
+                return list.length;
+            }, { eleLookup, y, childElement });
+        }
+    }
+    // ----------------------
+    // If no child elements check normally (Lineup/Promo Tiles)
+    else {
+        disclaimerListLength = await page.evaluate((eleLookup) => {
+            var list = new Array();
+            list = $(eleLookup).find('.disclosure-bubble-wrapper .bubble');
+            return list.length;
+        }, eleLookup);
+    }
 
+
+    // ----------------------
+    // Click Disclaimer
+    // Check if in view and then click to open it
+    // ----------------------
+    // console.log('(Disclaimer) eleLookup: ' + eleLookup);
+    // console.log('(Disclaimer) disclaimerList: ' + disclaimerListLength);
+    for (let x = 0; x < disclaimerListLength; x++) {
+        const disclaimerOpen = await page.evaluate(({ eleLookup, x, childElement, y }) => {
+            // ----------------------
+            // Check if disclaimer is in viewport
+            // ----------------------
+            // console.log('(Disclaimer) eleLookup: ' + eleLookup);
+            var ele;
+            // ----------------------
+            // Check if we have a childElement (Hero Panels)
+            if (childElement != undefined) {
+                if (childElement.length > 0) {
+                    ele = $(eleLookup).find(childElement).eq(y).find('.disclosure-bubble-wrapper .bubble')[x];
+                }
+            }
+            // ----------------------
+            // If no child elements check normally (Lineup/Promo Tiles)
+            else {
+                ele = $(eleLookup).find('.disclosure-bubble-wrapper .bubble')[x];
+            }
+            var elementBounding = ele.getBoundingClientRect();
+            var elementTop = elementBounding.top + window.scrollY;
+            var elementBottom = elementTop + elementBounding.height;
+            var viewportTop = window.scrollY;
+            var viewportBottom = viewportTop + window.outerHeight;
+
+            // ----------------------
+            // Click disclaimer if in view
+            // ----------------------
+            if (elementBottom > viewportTop && elementTop < viewportBottom) {
+                ele.click();
+                return true;
+            }
+        }, { eleLookup, x, childElement, y });
+        await wait(500);
+
+        // ----------------------
+        // Take the module screenshot and save it under sections
+        // ----------------------
+        if (y == 0) {
+            var fileName = dir + '/section_' + (i + 1) + '-disclaimer-' + (x + 1) + '.png';
+        } else {
+            var fileName = dir + '/section_' + (i + 1) + '-' + y + '-disclaimer-' + (x + 1) + '.png';
+        }
+        await page.screenshot({ path: fileName });
+        screenshotArray.push(fileName);
+        await wait(500);
+        // ----------------------
+        // Close Disclaimer box if it was open
+        // ----------------------
+        const disclaimerClose = await page.evaluate(() => {
+            $('#disclosure-panel-wrapper').find('.ucx-close-button').click();
+            console.log('(Disclaimer) **close disclaimer - inside loop**');
+        });
+        console.log('(Disclaimer) **Next Disclaimer**');
+    }
+}
+
+async function arrowCheck(i, eleLookup, page, dir, screenshotArray) {
+    // ----------------------
+    // Always close the last one from the loop
+    // ----------------------
+    // console.log('**Always Try To Close Disclaimer First**');
+    const disclaimerClose = await page.evaluate(() => {
+        $('#disclosure-panel-wrapper').find('.ucx-close-button').click();
+        $('#disclosure-panel-wrapper .disclosure-panel-wrapper').removeClass('show');
+        // console.log('Close Button: ' + $('#disclosure-panel-wrapper').find('.ucx-close-button').length);
+        // console.log('**close disclaimer - outside loop**');
+        // debugger;
+    });
+    await wait(500);
+
+    // ----------------------
+    // Check for arrows and pagination dots
+    // ----------------------
+    const arrowListLength = await page.evaluate((eleLookup) => {
+        var list = new Array();
+        var pagination = new Array();
+        // .arrow works for hero carousel
+        list = $(eleLookup).find('.arrow.right').length;
+        pagination = $(eleLookup).find('.meatball').length;
+        // debugger;
+        return {
+            arrowNum: list,
+            paginationNum: pagination
+        }
+    }, eleLookup);
+
+    // ----------------------
+    // Take the initial module screenshot and save it under sections
+    // ----------------------
+    // var fileName = dir + '/section_' + (i + 1) + '.png';
+    // await page.screenshot({ path: fileName });
+    // screenshotArray.push(fileName);
+    // await wait(500);
+    // ----------------------
+    // Close Arrow box if it was open
+    // ----------------------
+    // await disclaimerCheck(i, eleLookup, page, dir, screenshotArray, 0);
+    // await wait(500);
+
+    // ----------------------
+    // Click arrow
+    // Check if in view and then click to open it
+    // ----------------------
+    if (arrowListLength.paginationNum > 0) {
+        for (let y = 0; y < arrowListLength.paginationNum; y++) {
+            console.log('--------------------------------------------------');
+            console.log('(Arrow) eleLookup: ' + eleLookup);
+            console.log('(Arrow) Loop ID: ' + y);
+            console.log('(Arrow) arrowList - arrowNum: ' + arrowListLength.arrowNum);
+            console.log('(Arrow) arrowList - pagination: ' + arrowListLength.paginationNum);
+            await arrowLogic(i, y, eleLookup, page, dir, screenshotArray, arrowListLength);
+        }
+    } else if (arrowListLength.arrowNum > 0) {
+        console.log('--------------------------------------------------');
+        console.log('(Arrow) eleLookup: ' + eleLookup);
+        console.log('(Arrow) arrowList - arrowNum: ' + arrowListLength.arrowNum);
+        console.log('(Arrow) arrowList - pagination: ' + arrowListLength.paginationNum);
+        await arrowLogic(i, 0, eleLookup, page, dir, screenshotArray, arrowListLength);
+    }
+}
+
+async function arrowLogic(i, y, eleLookup, page, dir, screenshotArray, arrowListLength) {
+
+    // ----------------------
+    // Take the module screenshot and save it under sections
+    // ----------------------
+    var fileName = dir + '/section_' + (i + 1) + '-arrow-' + (y + 1) + '.png';
+    await page.screenshot({ path: fileName });
+    screenshotArray.push(fileName);
+    await wait(500);
+    // ----------------------
+    //  Check if we have pagination dots and if so run disclaimer check before proceeding
+    // ----------------------
+    if (arrowListLength.paginationNum > 0) {
+        // var temp = $(eleLookup).find('.carousel-item');
+        // var carouselItem = await page.evaluate(({ eleLookup, y }) => {
+        //     var ele = $(eleLookup).find('.carousel-item').eq(y)[0];
+        //     debugger;
+        //     // return $(ele);
+        //     return {
+        //         childClass: '.carousel-item',
+        //         id
+        //     }
+        // }, { eleLookup, y });
+        // console.log('(Arrow) carouselItem: ' + carouselItem)
+        await disclaimerCheck(i, eleLookup, page, dir, screenshotArray, y, '.carousel-item');
+    } else {
+        await disclaimerCheck(i, eleLookup, page, dir, screenshotArray, y);
+    }
+    await wait(500);
+
+    // for (let x = 0; x < arrowListLength.arrowNum; x++) {
+    const arrowOpen = await page.evaluate(({ eleLookup }) => {
+        // ----------------------
+        // Check if arrow is in viewport
+        // ----------------------
+        // console.log('(Arrow/ArrowLogic) eleLookup: ' + eleLookup);
+        var ele = $(eleLookup).find('.arrow.right');
+        // var elementBounding = ele[0].getBoundingClientRect();
+        // var elementTop = elementBounding.top + window.scrollY;
+        // var elementBottom = elementTop + elementBounding.height;
+        // var viewportTop = window.scrollY;
+        // var viewportBottom = viewportTop + window.outerHeight;
+        // debugger;
+        // debugger;
+        // ----------------------
+        // Click arrow if in view
+        // ----------------------
+        // console.log('---------------------');
+        // console.log('(ARROW) Is the Arrow in view: ' + (elementBottom > viewportTop && elementTop < viewportBottom));
+        // console.log('(ARROW) viewportTop: ' + viewportTop);
+        // console.log('(ARROW) elementBottom: ' + elementBottom);
+        // console.log('(ARROW) elementTop: ' + elementTop);
+        // console.log('(ARROW) viewportBottom: ' + viewportBottom);
+        // if (elementBottom > viewportTop && elementTop < viewportBottom) {
+        ele.find('a')[0].click();
+        // console.log('(ARROW) Arrow click element: ' + ele.find('a')[0]);
+        return true;
+        // }
+    }, { eleLookup });
+    await wait(500);
+
+    console.log('(Arrow/ArrowLogic) **Next Pagination**');
+    // }
+}
+
+// ----------------------
+// This route triggers the above function for screenshotting when there is a get request and there are query paramets passed
+router.get('/', function(req, res, next) {
+    console.log('[LOG] Submitted URL: ' + req.query.url);
+    // TODO: check if URL is valid and if not don't call the SShot function
+    console.log('[LOG] Submitted PSW: ' + req.query.psw);
+    SShot(res, next, req.query.url, req.query.psw);
+});
+
+module.exports = router;
+
+// ----------------------
+//
+// PASSWORD FUNCTIONS
+//
+// ----------------------
 function b64_md5(s) {
     //return s.length;
     return binl2b64(core_md5(str2binl(s), s.length * chrsz));
@@ -553,71 +715,3 @@ function getPath(url) {
     var temp = "." + url.match(/[^(?:http:\/\/|www\.|https:\/\/|www\-preview)\.|uat\.|preview\.|test\.)]([^\/]+)(com)/g);
     return temp;
 }
-
-async function disclaimerCheck(i, eleLookup, page, dir, screenshotArray) {
-    // ----------------------
-    // Check for disclaimer child elements in module we just SS
-    // ----------------------
-    const disclaimerListLength = await page.evaluate((eleLookup) => {
-        var list = new Array();
-        list = $(eleLookup).find('.disclosure-bubble-wrapper .bubble');
-        return list.length;
-    }, eleLookup);
-
-    // ----------------------
-    // Click Disclaimer
-    // Check if in view and then click to open it
-    // ----------------------
-    console.log('eleLookup: ' + eleLookup);
-    console.log("disclaimerList: " + disclaimerListLength);
-    for (let x = 0; x < disclaimerListLength; x++) {
-        const disclaimerOpen = await page.evaluate(({ eleLookup, x }) => {
-            // ----------------------
-            // Check if disclaimer is in viewport
-            // ----------------------
-            console.log(eleLookup);
-            var ele = $(eleLookup).find('.disclosure-bubble-wrapper .bubble')[x];
-            var elementBounding = ele.getBoundingClientRect();
-            var elementTop = elementBounding.top + window.scrollY;
-            var elementBottom = elementTop + elementBounding.height;
-            var viewportTop = window.scrollY;
-            var viewportBottom = viewportTop + window.outerHeight;
-
-            // ----------------------
-            // Click disclaimer if in view
-            // ----------------------
-            if (elementBottom > viewportTop && elementTop < viewportBottom) {
-                ele.click();
-                return true;
-            }
-        }, { eleLookup, x });
-        await wait(1000);
-        // ----------------------
-        // Take the module screenshot and save it under sections
-        // ----------------------
-        var fileName = dir + '/section_' + (i + 1) + '-' + (x + 1) + '.png';
-        await page.screenshot({ path: fileName });
-        screenshotArray.push(fileName);
-        await wait(1000);
-        // ----------------------
-        // Close Disclaimer box if it was open
-        // ----------------------
-        const disclaimerClose = await page.evaluate(() => {
-            $('#disclosure-panel-wrapper').find('.ucx-close-button').click();
-            console.log('**close disclaimer - inside loop**');
-        });
-        console.log('**Next Disclaimer**');
-    }
-}
-
-
-// ----------------------
-// This route triggers the above function for screenshotting when there is a get request and there are query paramets passed
-router.get('/', function(req, res, next) {
-    console.log('[LOG] Submitted URL: ' + req.query.url);
-    // TODO: check if URL is valid and if not don't call the SShot function
-    console.log('[LOG] Submitted PSW: ' + req.query.psw);
-    SShot(res, next, req.query.url, req.query.psw);
-});
-
-module.exports = router;
