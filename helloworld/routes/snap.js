@@ -145,9 +145,18 @@ async function SShot(res, next, url, psw) {
         let screenNum = 0;
         // ----------------------
         // we have to take a screenshot to force the page to load
+        // create hero file name to add to lazyload array
+        var heroScreenShot = './public/screenshots/scrolling/screen_' + screenNum + '.png';
+
         await page.screenshot({ path: './public/screenshots/scrolling/screen_' + screenNum + '.png' });
         await wait(2000);
         const viewportHeight = page.viewport().height + 20;
+        let lazyLoadPath = './public/screenshots/scrolling/';
+        let lazyLoadArr = new Array();
+
+        lazyLoadArr.push(heroScreenShot);
+
+
         console.log('Lazy Load: starting');
 
         // ----------------------
@@ -162,8 +171,23 @@ async function SShot(res, next, url, psw) {
             viewportIncr = viewportIncr + viewportHeight;
             // ----------------------
             // we have to take a screenshot to force the page to load
-            await page.screenshot({ path: './public/screenshots/scrolling/screen_' + screenNum + '.png' });
+            // create lady load file name and store it in array
+            var fileNameLazyload = lazyLoadPath + screenNum + '.png';
+            lazyLoadArr.push(fileNameLazyload);
+
+            await page.screenshot({ path: lazyLoadPath + screenNum + '.png' });
+
         }
+        // send lazyloadArray items to be deleted
+        await deleteFiles(lazyLoadArr, function(err) {
+            if (err) {
+                console.log(err);
+            } else {
+                console.log('all files removed');
+            }
+        });
+
+
         console.log('Lazy Load: end');
         // Lazy Load END -----------------------------
         console.log('Children Elements: start finding')
@@ -301,6 +325,15 @@ async function SShot(res, next, url, psw) {
         // ----------------------
         // Send a response to the original request that we are done taking screenshots
         res.send('Screenshot taken for: ' + url); //req.query.url);
+        // Send Screenshot array to be deleted.
+
+        await deleteFiles(screenshotArray, function(err) {
+            if (err) {
+                console.log(err);
+            } else {
+                console.log('all files removed');
+            }
+        });
 
     } catch (err) {
         // ----------------------
@@ -544,6 +577,28 @@ router.get('/', function(req, res, next) {
 });
 
 module.exports = router;
+
+
+// ----------------------
+//
+// DELETE IMAGES ONCE PDF HAS BEEN CREATED.
+//
+// ----------------------
+
+function deleteFiles(files, callback) {
+    var i = files.length;
+    files.forEach(function(filepath) {
+        fs.unlink(filepath, function(err) {
+            i--;
+            if (err) {
+                callback(err);
+                return;
+            } else if (i <= 0) {
+                callback(null);
+            }
+        });
+    });
+}
 
 // ----------------------
 //
