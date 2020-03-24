@@ -203,12 +203,17 @@ async function SShot(res, next, url, psw) {
             // header, footer, hero sections will not be under this contianer
             for (var x = 0; x < results.length; x++) {
                 // console.log('children elements: ele = ' + document.querySelectorAll('.' + results[x].className.split(' ')[0])[0].children[0]);
-                console.log('Loop ID: ' + x);
-                console.log('ChildID: ' + $(results[x]).children().eq(0).attr('id'));
+                // console.log('Loop ID: ' + x);
+
+                // TODO: Check for 0 level id and 1 level id and 2 level id max
+                // results[x].customClass = $(results[x]).addClass('pdf-module-' + x);
+
+                // console.log('ChildID: ' + $(results[x]).children().eq(0).attr('id'));
                 if ($(results[x]).children().eq(0).attr('id') != '') {
                     childrenOfChildrenID[x] = $(results[x]).children().eq(0).attr('id');
                     results[x].childs = childrenOfChildrenID[x];
-                    console.log('childrenOfChildrenID: ' + childrenOfChildrenID);
+                    // debugger;
+                    // console.log('childrenOfChildrenID: ' + childrenOfChildrenID);
                 }
 
             }
@@ -222,7 +227,8 @@ async function SShot(res, next, url, psw) {
                     offWidth: result.offsetWidth,
                     offHeight: result.offsetHeight,
                     offLeft: result.offsetLeft,
-                    offTop: result.offsetTop
+                    offTop: result.offsetTop,
+                    customClass: result.customClass
                 }
             });
         });
@@ -253,6 +259,7 @@ async function SShot(res, next, url, psw) {
         // Loop through each module that we found in the parsys container and scroll them into view to make sure they are in the screenshot correctly
         var eleLookup = '';
 
+        console.log(sections);
         for (var i = 0; i < sections.length; i++) {
             console.log('--------------------------------------------------');
             console.log('Section Data: ');
@@ -263,12 +270,13 @@ async function SShot(res, next, url, psw) {
             // ----------------------
             // Scroll the module into view based on 3 variations of id or class combinations
             if (!sections[i].class.includes('open-container')) {
-                if (sections[i].childID != undefined) {
-                    // console.log('Sections: ChildID Used');
-                    page.$eval('#' + sections[i].childID, (el) => el.scrollIntoView())
-                    eleLookup = '#' + sections[i].childID;
-                    await wait(500);
-                } else if (sections[i].id != '') {
+                // if (sections[i].childID != undefined) {
+                //     // console.log('Sections: ChildID Used');
+                //     page.$eval('#' + sections[i].childID, (el) => el.scrollIntoView())
+                //     eleLookup = '#' + sections[i].childID;
+                //     await wait(500);
+                // } else 
+                if (sections[i].id != '') {
                     // console.log('Sections: ID Used');
                     page.$eval('#' + sections[i].id, (el) => el.scrollIntoView())
                     eleLookup = '#' + sections[i].id;
@@ -302,19 +310,16 @@ async function SShot(res, next, url, psw) {
                 // console.log('screenshot taken:');
                 await wait(500);
 
-                // TODO: TURN INTO ONE FUNCTION
                 // ----------------------
                 // Check for disclaimer child elements in module we just SS
                 // ----------------------
                 await disclaimerCheck(i, eleLookup, page, dir, screenshotArray, 0);
 
-                // TODO: After disclaimer SS is taken then look for Arrow/tabs - 24 hours
                 // ----------------------
                 // Check for arrow child elements in module we just SS
                 // ----------------------
                 await arrowCheck(i, eleLookup, page, dir, screenshotArray);
 
-                // TODO: After arrow/tabs is taken then look one last time for disclaimers - 24 hours
                 // TODO: After final disclaimer then look for modal buttons - 40 hours
                 // TODO: After modal opens then look for disclaimers in modal - 24 hours
             }
@@ -327,22 +332,25 @@ async function SShot(res, next, url, psw) {
         await page.close();
         await browser.close();
         console.log("screenshot arrray = ", screenshotArray);
-        await imagesToPdf(screenshotArray, dir + "/combined.pdf");
-        // ----------------------
+        if (screenshotArray.length > 0) {
+            await imagesToPdf(screenshotArray, dir + "/combined.pdf");
+            // ----------------------
+            res.send('Screenshot taken for: ' + url + '<br><br> Download PDF' + '<a href=' + dir + '/combined.pdf' + '>LINK</a>');
 
-        res.send('Screenshot taken for: ' + url + '<br><br> Download PDF' + '<a href=' + dir + '/combined.pdf' + '>LINK</a>');
+            // Send a response to the original request that we are done taking screenshots
+            // res.send('Screenshot taken for: ' + url); //req.query.url);
+            // Send Screenshot array to be deleted.
 
-        // Send a response to the original request that we are done taking screenshots
-        // res.send('Screenshot taken for: ' + url); //req.query.url);
-        // Send Screenshot array to be deleted.
-
-        await deleteFiles(screenshotArray, function(err) {
-            if (err) {
-                console.log(err);
-            } else {
-                console.log('all files removed');
-            }
-        });
+            await deleteFiles(screenshotArray, function(err) {
+                if (err) {
+                    console.log(err);
+                } else {
+                    console.log('all files removed');
+                }
+            });
+        } else {
+            console.log('no screenshots so no directory or PDF');
+        }
 
     } catch (err) {
         // ----------------------
