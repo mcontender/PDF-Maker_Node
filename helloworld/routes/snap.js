@@ -182,7 +182,7 @@ async function SShot(res, next, url, psw) {
             if (err) {
                 console.log(err);
             } else {
-                console.log('all files removed');
+                console.log('all lazy load files removed');
             }
         });
 
@@ -195,7 +195,11 @@ async function SShot(res, next, url, psw) {
         // execute standard javascript in the context of the page.
         // const stories = await page.evaluate('.parsys', sections => { return $('.parsys').children });
         const sections = await page.evaluate(() => {
-            var results = Array.from($('.parsys').children())
+            var results = Array.from($('.parsys').children());
+            if (results.length == 0) {
+                results = Array.from($('.gcss-main-content').children());
+            }
+            debugger;
             var childrenOfChildrenID = Array(results.length);
             console.log('Children Elements: loop for more');
             // ----------------------
@@ -258,8 +262,8 @@ async function SShot(res, next, url, psw) {
         // ----------------------
         // Loop through each module that we found in the parsys container and scroll them into view to make sure they are in the screenshot correctly
         var eleLookup = '';
-
-        console.log(sections);
+        console.log('trigger sections');
+        console.log('sections: ' + sections);
         for (var i = 0; i < sections.length; i++) {
             console.log('--------------------------------------------------');
             console.log('Section Data: ');
