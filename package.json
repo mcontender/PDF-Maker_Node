@@ -8,7 +8,7 @@
         "morgan": "^1.9.1",
         "puppeteer": "^2.0.0",
         "minimist": ">=0.2.1",
-        "acorn": ">=5.7.4",
+        "acorn": ">=7.1.1",
         "uglify-js": "^3.7.5",
         "kind-of": ">=6.0.3",
         "constantinople": "^4.0.1",
