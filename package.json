@@ -6,7 +6,13 @@
     "dependencies": {
         "express": "^4.17.1",
         "morgan": "^1.9.1",
-        "puppeteer": "^2.0.0"
+        "puppeteer": "^2.0.0",
+        "minimist": ">=0.2.1",
+        "acorn": ">=5.7.4",
+        "uglify-js": "^3.7.5",
+        "kind-of": ">=6.0.3",
+        "constantinople": "^4.0.1",
+        "clean-css": "^4.2.1"
     },
     "devDependencies": {
         "eslint": "^6.8.0"

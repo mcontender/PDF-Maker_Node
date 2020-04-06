@@ -20,7 +20,10 @@
         "mkdirp": "^1.0.3",
         "morgan": "~1.9.1",
         "uglify-js": "^3.7.5",
-        "valid-url": "^1.0.9"
+        "valid-url": "^1.0.9",
+        "minimist": ">=0.2.1",
+        "acorn": ">=5.7.4",
+        "kind-of": ">=6.0.3"
     },
     "devDependencies": {
         "nodemon": "^2.0.2",
