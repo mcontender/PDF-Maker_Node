@@ -43,7 +43,7 @@ async function SShot(res, next, url, psw) {
     var expire = new Date();
     var nDays = 45;
 
-    console.log("PSW" + psw);
+    console.log("Brand PSW : " + psw);
     if (psw.length > 0) {
         if (url.indexOf('preview') >= 0 || url.indexOf('test') >= 0 || url.indexOf('uat') >= 0) {
             console.log("LOG: Preview Cookie Set Up!!!");
@@ -120,13 +120,7 @@ async function SShot(res, next, url, psw) {
         } catch (err) {
             console.error('Error thrown')
         }
-
-
-
-
         await page.emulateMedia('screen');
-
-
         // -----------------------------
         // Lazy Load Page first
         // -----------------------------
@@ -159,7 +153,7 @@ async function SShot(res, next, url, psw) {
         console.log('Lazy Load: starting');
 
         // ----------------------
-        // Loop enoght times where there is no more height and we know we have gotten to the bottom of the page
+        // Loop enough times where there is no more height and we know we have gotten to the bottom of the page
         // This loops based on the viewport height
         while (viewportIncr + viewportHeight < height) {
             screenNum++;
@@ -199,12 +193,12 @@ async function SShot(res, next, url, psw) {
             if (results.length == 0) {
                 results = Array.from($('.gcss-main-content').children());
             }
-            debugger;
+            // debugger;
             var childrenOfChildrenID = Array(results.length);
             console.log('Children Elements: loop for more');
             // ----------------------
-            // Get list of modules in the parsys cotainer on the page only
-            // header, footer, hero sections will not be under this contianer
+            // Get list of modules in the parsys container on the page only
+            // header, footer, hero sections will not be under this container
             for (var x = 0; x < results.length; x++) {
                 // console.log('children elements: ele = ' + document.querySelectorAll('.' + results[x].className.split(' ')[0])[0].children[0]);
                 // console.log('Loop ID: ' + x);
@@ -257,6 +251,17 @@ async function SShot(res, next, url, psw) {
         } else {
             console.log('hero not found');
         };
+
+        // temp check for feature carousel tabs for test page -
+        // will need to implement as part of parsys components check 
+        if (await page.$('.feature-carousel') !== null) {
+            console.log('feature-carousel found');
+
+            page.$eval('.feature-carousel', (el) => el.scrollIntoView())
+            await featureCarouselTabs(-1, '.feature-carousel', page, dir, screenshotArray);
+
+        }
+
 
 
         // ----------------------
@@ -389,6 +394,7 @@ async function disclaimerCheck(i, eleLookup, page, dir, screenshotArray, y, chil
     else {
         disclaimerListLength = await page.evaluate((eleLookup) => {
             var list = new Array();
+            // debugger;
             list = $(eleLookup).find('.disclosure-bubble-wrapper .bubble');
             return list.length;
         }, eleLookup);
@@ -406,7 +412,8 @@ async function disclaimerCheck(i, eleLookup, page, dir, screenshotArray, y, chil
             // ----------------------
             // Check if disclaimer is in viewport
             // ----------------------
-            // console.log('(Disclaimer) eleLookup: ' + eleLookup);
+            console.log('(Disclaimer) eleLookup: ' + eleLookup);
+            // debugger;
             var ele;
             // ----------------------
             // Check if we have a childElement (Hero Panels)
@@ -588,12 +595,77 @@ async function arrowLogic(i, y, eleLookup, page, dir, screenshotArray, arrowList
     // }
 }
 
+
+async function featureCarouselTabs(i, eleLookup, page, dir, screenshotArray) {
+    // check to see how many tabs are in module
+    const tabsLength = await page.evaluate((eleLookup) => {
+        var tabTotal = $(eleLookup).find('.tab-list').children().length;
+
+        // debugger;
+        return {
+            tabs: tabTotal
+        }
+    }, eleLookup);
+
+    ///
+    if (tabsLength.tabs > 0) {
+        for (let y = 0; y < tabsLength.tabs; y++) {
+            await featureCarouselTabsCapture(i, y, eleLookup, page, dir, screenshotArray, tabsLength);
+        }
+
+
+    }
+
+}
+
+
+async function featureCarouselTabsCapture(i, y, eleLookup, page, dir, screenshotArray, tabsLength) {
+    // ----------------------
+    // Take the module screenshot and save it under sections
+    // ----------------------
+    var fileName = dir + '/section_' + (i + 1) + '-feature-carousel-tab-' + (y + 1) + '.png';
+    var currentTab = y;
+    await page.screenshot({ path: fileName });
+    screenshotArray.push(fileName);
+    await wait(500);
+    // ----------------------
+    //  Check if we have pagination dots and if so run disclaimer check before proceeding
+    // ----------------------
+    if (tabsLength.tabs > 0) {
+
+        await disclaimerCheck(i, eleLookup, page, dir, screenshotArray, y, '.tablist-tab-content');
+    } else {
+        await disclaimerCheck(i, eleLookup, page, dir, screenshotArray, y);
+    }
+    await wait(500);
+
+    const tabClick = await page.evaluate(({ eleLookup, currentTab }) => {
+        // ----------------------
+        // Check if TAB is in viewport
+        // debugger;
+        console.log('currentTab inside = ', currentTab);
+        // ----------------------
+        var ele = $(eleLookup).find('.tab-list');
+
+        ele.find('a')[currentTab].click();
+        // console.log('(TAB) TAB click element: ' + ele.find('a')[0]);
+        return true;
+        // }
+    }, { eleLookup, currentTab });
+    await wait(500);
+
+    console.log('(TAB/featureCarouselTabsCapture) ** Next TAB **');
+    // }
+}
+
+
+
 // ----------------------
-// This route triggers the above function for screenshotting when there is a get request and there are query paramets passed
+// This route triggers the above function for screen-shotting when there is a get request and there are query parameters passed
 router.get('/', function(req, res, next) {
     console.log('[LOG] Submitted URL: ' + req.query.url);
     // TODO: check if URL is valid and if not don't call the SShot function
-    console.log('[LOG] Submitted PSW: ' + req.query.psw);
+    console.log('[LOG] Submitted PSW : ' + req.query.psw);
     SShot(res, next, req.query.url, req.query.psw);
 });
 
@@ -621,7 +693,6 @@ function deleteFiles(files, callback) {
     });
 }
 
-
 // ----------------------
 //get brand from url passed on form
 
@@ -630,9 +701,10 @@ function getPath(url) {
     var temp = "." + url.match(/[^(?:http:\/\/|www\.|https:\/\/|www\-preview)\.|uat\.|preview\.|test\.)]([^\/]+)(com)/g);
     return temp;
 }
+
 // ----------------------
 //
-// PASSWORD FUNCTIONS
+// PASSWORD FUNCTIONS.
 //
 // ----------------------
 
