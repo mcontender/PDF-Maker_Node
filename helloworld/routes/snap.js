@@ -322,7 +322,7 @@ async function SShot(res, next, url, psw) {
                 // ----------------------
                 // Check for disclaimer child elements in module we just SS
                 // ----------------------
-                await disclaimerCheck(i, eleLookup, page, dir, screenshotArray, 0);
+                // await disclaimerCheck(i, eleLookup, page, dir, screenshotArray, 0);
 
                 // ----------------------
                 // Check for arrow child elements in module we just SS
@@ -357,6 +357,8 @@ async function SShot(res, next, url, psw) {
                     console.log('all files removed');
                 }
             });
+
+
         } else {
             console.log('no screenshots so no directory or PDF');
         }
@@ -457,10 +459,13 @@ async function disclaimerCheck(i, eleLookup, page, dir, screenshotArray, y, chil
         // ----------------------
         // Close Disclaimer box if it was open
         // ----------------------
-        const disclaimerClose = await page.evaluate(() => {
-            $('#disclosure-panel-wrapper').find('.ucx-close-button').click();
-            console.log('(Disclaimer) **close disclaimer - inside loop**');
-        });
+        // const disclaimerClose = await page.evaluate(() => {
+        //     $('#disclosure-panel-wrapper').find('.ucx-close-button').click();
+        //     console.log('(Disclaimer) **close disclaimer - inside loop**');
+        // });
+
+        // global function to close disclaimer
+        closeDisclaimer(page);
         console.log('(Disclaimer) **Next Disclaimer**');
     }
 }
@@ -553,7 +558,6 @@ async function arrowLogic(i, y, eleLookup, page, dir, screenshotArray, arrowList
         //         id
         //     }
         // }, { eleLookup, y });
-        // console.log('(Arrow) carouselItem: ' + carouselItem)
         await disclaimerCheck(i, eleLookup, page, dir, screenshotArray, y, '.carousel-item');
     } else {
         await disclaimerCheck(i, eleLookup, page, dir, screenshotArray, y);
@@ -598,10 +602,14 @@ async function arrowLogic(i, y, eleLookup, page, dir, screenshotArray, arrowList
 
 async function featureCarouselTabs(i, eleLookup, page, dir, screenshotArray) {
     // check to see how many tabs are in module
+    closeDisclaimer(page);
+
+
+
     const tabsLength = await page.evaluate((eleLookup) => {
         var tabTotal = $(eleLookup).find('.tab-list').children().length;
 
-        // debugger;
+        debugger;
         return {
             tabs: tabTotal
         }
@@ -622,23 +630,10 @@ async function featureCarouselTabs(i, eleLookup, page, dir, screenshotArray) {
 async function featureCarouselTabsCapture(i, y, eleLookup, page, dir, screenshotArray, tabsLength) {
     // ----------------------
     // Take the module screenshot and save it under sections
-    // ----------------------
+
+
     var fileName = dir + '/section_' + (i + 1) + '-feature-carousel-tab-' + (y + 1) + '.png';
     var currentTab = y;
-    await page.screenshot({ path: fileName });
-    screenshotArray.push(fileName);
-    await wait(500);
-    // ----------------------
-    //  Check if we have pagination dots and if so run disclaimer check before proceeding
-    // ----------------------
-    if (tabsLength.tabs > 0) {
-
-        await disclaimerCheck(i, eleLookup, page, dir, screenshotArray, y, '.tablist-tab-content');
-    } else {
-        await disclaimerCheck(i, eleLookup, page, dir, screenshotArray, y);
-    }
-    await wait(500);
-
     const tabClick = await page.evaluate(({ eleLookup, currentTab }) => {
         // ----------------------
         // Check if TAB is in viewport
@@ -653,9 +648,23 @@ async function featureCarouselTabsCapture(i, y, eleLookup, page, dir, screenshot
         // }
     }, { eleLookup, currentTab });
     await wait(500);
-
     console.log('(TAB/featureCarouselTabsCapture) ** Next TAB **');
-    // }
+
+    await page.screenshot({ path: fileName });
+    screenshotArray.push(fileName);
+    await wait(500);
+    // ----------------------
+    //  Check if we have pagination dots and if so run disclaimer check before proceeding
+    // ----------------------
+    debugger;
+    if (tabsLength.tabs > 0) {
+
+        await disclaimerCheck(i, eleLookup, page, dir, screenshotArray, y, '.tablist-tab-content');
+    } else {
+        await disclaimerCheck(i, eleLookup, page, dir, screenshotArray, y);
+    }
+    await wait(500);
+    closeDisclaimer(page);
 }
 
 
@@ -677,6 +686,17 @@ module.exports = router;
 // DELETE IMAGES ONCE PDF HAS BEEN CREATED.
 //
 // ----------------------
+
+async function closeDisclaimer(page) {
+    const disclaimerClose = await page.evaluate(() => {
+        $('#disclosure-panel-wrapper').find('.ucx-close-button').click();
+        $('#disclosure-panel-wrapper .disclosure-panel-wrapper').removeClass('show');
+        // console.log('Close Button: ' + $('#disclosure-panel-wrapper').find('.ucx-close-button').length);
+        // console.log('**close disclaimer - outside loop**');
+        // debugger;
+    });
+    await wait(500);
+}
 
 function deleteFiles(files, callback) {
     var i = files.length;
