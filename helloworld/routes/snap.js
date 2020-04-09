@@ -252,18 +252,6 @@ async function SShot(res, next, url, psw) {
             console.log('hero not found');
         };
 
-        // temp check for feature carousel tabs for test page -
-        // will need to implement as part of parsys components check 
-        if (await page.$('.feature-carousel') !== null) {
-            console.log('feature-carousel found');
-
-            page.$eval('.feature-carousel', (el) => el.scrollIntoView())
-            await featureCarouselTabs(-1, '.feature-carousel', page, dir, screenshotArray);
-
-        }
-
-
-
         // ----------------------
         // Loop through each module that we found in the parsys container and scroll them into view to make sure they are in the screenshot correctly
         var eleLookup = '';
@@ -301,13 +289,8 @@ async function SShot(res, next, url, psw) {
                 // Always close the last one from the loop
                 // ----------------------
                 // console.log('**Always Try To Close Disclaimer First**');
-                const disclaimerClose = await page.evaluate(() => {
-                    $('#disclosure-panel-wrapper').find('.ucx-close-button').click();
-                    $('#disclosure-panel-wrapper .disclosure-panel-wrapper').removeClass('show');
-                    // console.log('Close Button: ' + $('#disclosure-panel-wrapper').find('.ucx-close-button').length);
-                    // console.log('**close disclaimer - outside loop**');
-                    // debugger;
-                });
+
+                closeDisclaimer(page);
                 await wait(500);
 
                 // ----------------------
@@ -322,8 +305,10 @@ async function SShot(res, next, url, psw) {
                 // ----------------------
                 // Check for disclaimer child elements in module we just SS
                 // ----------------------
-                // await disclaimerCheck(i, eleLookup, page, dir, screenshotArray, 0);
 
+                if (eleLookup != '.feature-carousel') {
+                    await disclaimerCheck(i, eleLookup, page, dir, screenshotArray, 0);
+                }
                 // ----------------------
                 // Check for arrow child elements in module we just SS
                 // ----------------------
@@ -331,6 +316,9 @@ async function SShot(res, next, url, psw) {
 
                 // TODO: After final disclaimer then look for modal buttons - 40 hours
                 // TODO: After modal opens then look for disclaimers in modal - 24 hours
+
+                await featureCarouselTabs(-1, eleLookup, page, dir, screenshotArray);
+
             }
         }
         // console.log('Section Done');
@@ -379,6 +367,7 @@ async function disclaimerCheck(i, eleLookup, page, dir, screenshotArray, y, chil
     var disclaimerListLength;
     // console.log(childElement);
     // console.log(childElement == undefined);
+    console.log('disclaimerCheck Function()');
     // ----------------------
     // Check if we have a childElement (Hero Panels)
     if (childElement != undefined) {
@@ -407,41 +396,53 @@ async function disclaimerCheck(i, eleLookup, page, dir, screenshotArray, y, chil
     // Click Disclaimer
     // Check if in view and then click to open it
     // ----------------------
-    // console.log('(Disclaimer) eleLookup: ' + eleLookup);
+    console.log('(Disclaimer) eleLookup: 1 ' + eleLookup);
+    console.log('disclaimerListLength', disclaimerListLength);
     // console.log('(Disclaimer) disclaimerList: ' + disclaimerListLength);
     for (let x = 0; x < disclaimerListLength; x++) {
         const disclaimerOpen = await page.evaluate(({ eleLookup, x, childElement, y }) => {
             // ----------------------
             // Check if disclaimer is in viewport
             // ----------------------
-            console.log('(Disclaimer) eleLookup: ' + eleLookup);
             // debugger;
             var ele;
+            var bubbleWrapper;
             // ----------------------
             // Check if we have a childElement (Hero Panels)
             if (childElement != undefined) {
                 if (childElement.length > 0) {
-                    ele = $(eleLookup).find(childElement).eq(y).find('.disclosure-bubble-wrapper .bubble')[x];
+                    // ele = $(eleLookup).find(childElement).eq(y).find('.disclosure-bubble-wrapper .bubble')[x];
+
+                    bubbleWrapper = $(eleLookup).find(childElement).eq(y).find('.disclosure-bubble-wrapper')[x];
+                    ele = $(bubbleWrapper).find('.bubble');
+                    // debugger;
                 }
             }
             // ----------------------
             // If no child elements check normally (Lineup/Promo Tiles)
             else {
+                console.log('undefined else childElement.length > 0');
                 ele = $(eleLookup).find('.disclosure-bubble-wrapper .bubble')[x];
+
             }
-            var elementBounding = ele.getBoundingClientRect();
-            var elementTop = elementBounding.top + window.scrollY;
-            var elementBottom = elementTop + elementBounding.height;
-            var viewportTop = window.scrollY;
-            var viewportBottom = viewportTop + window.outerHeight;
+            // var elementBounding = ele.getBoundingClientRect();
+            // var elementTop = elementBounding.top + window.scrollY;
+            // var elementBottom = elementTop + elementBounding.height;
+            // var viewportTop = window.scrollY;
+            // var viewportBottom = viewportTop + window.outerHeight;
+            // // console.log('ele', ele);
+
 
             // ----------------------
             // Click disclaimer if in view
             // ----------------------
-            if (elementBottom > viewportTop && elementTop < viewportBottom) {
-                ele.click();
-                return true;
-            }
+            //debugger;
+            ele.click();
+            $('#disclosure-panel-wrapper .disclosure-panel-wrapper').addClass('show');
+            // if (elementBottom > viewportTop && elementTop < viewportBottom) {
+
+            //     return true;
+            // }
         }, { eleLookup, x, childElement, y });
         await wait(500);
 
@@ -450,8 +451,10 @@ async function disclaimerCheck(i, eleLookup, page, dir, screenshotArray, y, chil
         // ----------------------
         if (y == 0) {
             var fileName = dir + '/section_' + (i + 1) + '-disclaimer-' + (x + 1) + '.png';
+            console.log('Y==0');
         } else {
             var fileName = dir + '/section_' + (i + 1) + '-' + y + '-disclaimer-' + (x + 1) + '.png';
+            console.log('else Y==0');
         }
         await page.screenshot({ path: fileName });
         screenshotArray.push(fileName);
@@ -459,12 +462,7 @@ async function disclaimerCheck(i, eleLookup, page, dir, screenshotArray, y, chil
         // ----------------------
         // Close Disclaimer box if it was open
         // ----------------------
-        // const disclaimerClose = await page.evaluate(() => {
-        //     $('#disclosure-panel-wrapper').find('.ucx-close-button').click();
-        //     console.log('(Disclaimer) **close disclaimer - inside loop**');
-        // });
-
-        // global function to close disclaimer
+        // Global function to close disclaimer
         closeDisclaimer(page);
         console.log('(Disclaimer) **Next Disclaimer**');
     }
@@ -474,14 +472,9 @@ async function arrowCheck(i, eleLookup, page, dir, screenshotArray) {
     // ----------------------
     // Always close the last one from the loop
     // ----------------------
-    // console.log('**Always Try To Close Disclaimer First**');
-    const disclaimerClose = await page.evaluate(() => {
-        $('#disclosure-panel-wrapper').find('.ucx-close-button').click();
-        $('#disclosure-panel-wrapper .disclosure-panel-wrapper').removeClass('show');
-        // console.log('Close Button: ' + $('#disclosure-panel-wrapper').find('.ucx-close-button').length);
-        // console.log('**close disclaimer - outside loop**');
-        // debugger;
-    });
+    console.log('arrowCheck Function()');
+
+    closeDisclaimer(page);
     await wait(500);
 
     // ----------------------
@@ -500,6 +493,7 @@ async function arrowCheck(i, eleLookup, page, dir, screenshotArray) {
         }
     }, eleLookup);
 
+    console.log('arrowListLength', arrowListLength);
     // ----------------------
     // Take the initial module screenshot and save it under sections
     // ----------------------
@@ -577,7 +571,6 @@ async function arrowLogic(i, y, eleLookup, page, dir, screenshotArray, arrowList
         // var viewportTop = window.scrollY;
         // var viewportBottom = viewportTop + window.outerHeight;
         // debugger;
-        // debugger;
         // ----------------------
         // Click arrow if in view
         // ----------------------
@@ -599,26 +592,63 @@ async function arrowLogic(i, y, eleLookup, page, dir, screenshotArray, arrowList
     // }
 }
 
-
 async function featureCarouselTabs(i, eleLookup, page, dir, screenshotArray) {
+
+    // closeDisclaimer(page);
     // check to see how many tabs are in module
-    closeDisclaimer(page);
-
-
 
     const tabsLength = await page.evaluate((eleLookup) => {
         var tabTotal = $(eleLookup).find('.tab-list').children().length;
 
-        debugger;
+        // debugger;
         return {
             tabs: tabTotal
         }
     }, eleLookup);
 
-    ///
+    /// Loop though the tabs
     if (tabsLength.tabs > 0) {
         for (let y = 0; y < tabsLength.tabs; y++) {
-            await featureCarouselTabsCapture(i, y, eleLookup, page, dir, screenshotArray, tabsLength);
+            // ----------------------
+            // Take the module screenshot and save it under sections
+
+            var fileName = dir + '/section_' + (i + 1) + '-feature-carousel-tab-' + (y + 1) + '.png';
+            var currentTab = y;
+            const tabClick = await page.evaluate(({ eleLookup, currentTab }) => {
+                // ----------------------
+                // Check if TAB is in viewport
+                // debugger;
+                // ----------------------
+                var ele = $(eleLookup).find('.tab-list');
+
+                ele.find('a')[currentTab].click();
+                // console.log('(TAB) TAB click element: ' + ele.find('a')[0]);
+                return true;
+                // }
+            }, { eleLookup, currentTab });
+            await wait(500);
+
+            console.log('(feature-carousel :: tabs capture) ** Next TAB ===>');
+
+            await page.screenshot({ path: fileName });
+            // if its the first screenshot, don't save it since its being taking care of by sections
+            if (y != 0) {
+                screenshotArray.push(fileName);
+            }
+            await wait(500);
+            // ----------------------
+            //  Check if we have tabs and if so run disclaimer check before proceeding
+            // ----------------------
+            // debugger;
+            if (tabsLength.tabs > 0) {
+
+                await disclaimerCheck(i, eleLookup, page, dir, screenshotArray, y, '.tablist-tab-content');
+            } else {
+                await disclaimerCheck(i, eleLookup, page, dir, screenshotArray, y);
+            }
+            await wait(500);
+            closeDisclaimer(page);
+
         }
 
 
@@ -626,45 +656,16 @@ async function featureCarouselTabs(i, eleLookup, page, dir, screenshotArray) {
 
 }
 
-
-async function featureCarouselTabsCapture(i, y, eleLookup, page, dir, screenshotArray, tabsLength) {
-    // ----------------------
-    // Take the module screenshot and save it under sections
-
-
-    var fileName = dir + '/section_' + (i + 1) + '-feature-carousel-tab-' + (y + 1) + '.png';
-    var currentTab = y;
-    const tabClick = await page.evaluate(({ eleLookup, currentTab }) => {
-        // ----------------------
-        // Check if TAB is in viewport
-        // debugger;
-        console.log('currentTab inside = ', currentTab);
-        // ----------------------
-        var ele = $(eleLookup).find('.tab-list');
-
-        ele.find('a')[currentTab].click();
-        // console.log('(TAB) TAB click element: ' + ele.find('a')[0]);
-        return true;
-        // }
-    }, { eleLookup, currentTab });
+async function closeDisclaimer(page) {
+    const disclaimerClose = await page.evaluate(() => {
+        console.log('closeDisclaimer FUNCTION ');
+        $('#disclosure-panel-wrapper').find('.ucx-close-button').click();
+        $('#disclosure-panel-wrapper .disclosure-panel-wrapper').removeClass('show');
+        // console.log('Close Button: ' + $('#disclosure-panel-wrapper').find('.ucx-close-button').length);
+        // console.log('**close disclaimer - outside loop**');
+        //debugger;
+    });
     await wait(500);
-    console.log('(TAB/featureCarouselTabsCapture) ** Next TAB **');
-
-    await page.screenshot({ path: fileName });
-    screenshotArray.push(fileName);
-    await wait(500);
-    // ----------------------
-    //  Check if we have pagination dots and if so run disclaimer check before proceeding
-    // ----------------------
-    debugger;
-    if (tabsLength.tabs > 0) {
-
-        await disclaimerCheck(i, eleLookup, page, dir, screenshotArray, y, '.tablist-tab-content');
-    } else {
-        await disclaimerCheck(i, eleLookup, page, dir, screenshotArray, y);
-    }
-    await wait(500);
-    closeDisclaimer(page);
 }
 
 
@@ -686,17 +687,6 @@ module.exports = router;
 // DELETE IMAGES ONCE PDF HAS BEEN CREATED.
 //
 // ----------------------
-
-async function closeDisclaimer(page) {
-    const disclaimerClose = await page.evaluate(() => {
-        $('#disclosure-panel-wrapper').find('.ucx-close-button').click();
-        $('#disclosure-panel-wrapper .disclosure-panel-wrapper').removeClass('show');
-        // console.log('Close Button: ' + $('#disclosure-panel-wrapper').find('.ucx-close-button').length);
-        // console.log('**close disclaimer - outside loop**');
-        // debugger;
-    });
-    await wait(500);
-}
 
 function deleteFiles(files, callback) {
     var i = files.length;
